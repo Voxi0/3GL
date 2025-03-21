@@ -1,0 +1,37 @@
+.{
+    // Default name used by packages
+    .name = .LearningSokol,
+
+    // Semantic version which will be used for package deduplication
+    .version = "0.0.0",
+
+    // Changing this has security and trust implications
+    .fingerprint = 0x903cacff01d3249d,
+
+    // Tracks the earliest Zig version that the package considers to be a supported use case
+    .minimum_zig_version = "0.15.0-dev.23+1eb729b9b",
+
+    // Project dependencies
+    // `zig build --fetch` can be used to fetch all dependencies of a package recursively
+    // Once all dependencies are fetched, `zig build` no longer requires internet connectivity
+    .dependencies = .{
+        .sokol = .{
+            .url = "git+https://github.com/floooh/sokol-zig.git#e91c8950945973fb93ef8766f81f1bf536fbed81",
+            .hash = "sokol-0.1.0-pb1HK7bbOQDXIb4E_w3Z-_mBStCNCwZdOBV6TnYhxIth",
+        },
+        .zmath = .{
+            .url = "git+https://github.com/zig-gamedev/zmath.git#ccf7297ef6c01e21b2d51ad81b5b6ce929e86a00",
+            .hash = "zmath-0.11.0-dev-wjwivZY1AwDO7yxNmZ5HWoU03f9mFBet8LN9-oYc3i29",
+        },
+        .cimgui = .{
+            .url = "git+https://github.com/floooh/dcimgui.git#3969c14f7c7abda0e4b59d2616b17b7fb9eb0827",
+            .hash = "cimgui-0.1.0-44ClkTt5hgBU8BelH8W_G8mso3ys_hrqNUWwJvaxXDs5",
+        },
+    },
+
+    .paths = .{
+        "src",
+        "build.zig",
+        "build.zig.zon",
+    },
+}
