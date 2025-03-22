@@ -1,8 +1,16 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const sokol = @import("sokol");
 
 // Project settings
-pub const PROJECT_NAME = "LearningSokol";
+const PROJECT_NAME = "LearningSokol";
+const SOKOL_TOOLS_BIN_DIR = "./tools/sokol-tools-bin/bin/";
+const SLANG = "glsl410:glsl300es:metal_macos:hlsl5:wgsl";
+const SHADERS_SRC_DIR = "./src/shaders/";
+const SHADERS_BUILD_DIR = "./src/shaders/build/";
+const SHADERS = .{
+    .{ .src = "test-shader.glsl" },
+};
 
 // Declaratively construct a build graph that will be executed by an external runner
 pub fn build(b: *std.Build) void {
@@ -41,6 +49,9 @@ pub fn build(b: *std.Build) void {
             .{ .name = "zmath", .module = zmathDep.module("root") },
         },
     });
+
+    // A manually invoked build step to compile all shaders
+    buildShaders(b, target);
 
     // Handle native and web builds
     if (target.result.cpu.arch.isWasm()) {
@@ -98,7 +109,8 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
         .target = mainMod.resolved_target.?,
         .optimize = mainMod.optimize.?,
         .emsdk = emsdkDep,
-        .use_webgl2 = true,
+        .use_webgpu = true,
+        .use_webgl2 = false,
         .use_emmalloc = true,
         .use_filesystem = false,
         .shell_file_path = sokolDep.path("src/sokol/web/shell.html"),
@@ -108,4 +120,39 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
     const run = sokol.emRunStep(b, .{ .name = "lib", .emsdk = emsdkDep });
     run.step.dependOn(&linkStep.step);
     b.step("run", "Run lib").dependOn(&run.step);
+}
+
+// Build step to compile all shaders
+fn buildShaders(b: *std.Build, target: std.Build.ResolvedTarget) void {
+    // Figure out which Sokol SHDC binary to use
+    const optionalShdc: ?[:0]const u8 = comptime switch (builtin.os.tag) {
+        .windows => "win32/sokol-shdc.exe",
+        .linux => if (target.result.cpu.arch.isX86()) "linux/sokol-shdc" else "linux_arm64/sokol-shdc",
+        .macos => if (target.result.cpu.arch.isX86()) "osx/sokol-shdc" else "osx_arm64/sokol-shdc",
+        else => null,
+    };
+
+    // If there's no Sokol SHDC binary for the host platform
+    if (optionalShdc == null) {
+        std.log.warn("Unsupported host platform, skipping shader compilation", .{});
+        return;
+    }
+
+    // Compile all shaders
+    const shdcPath = SOKOL_TOOLS_BIN_DIR ++ optionalShdc.?;
+    const shdcStep = b.step("shaders", "Compile shaders");
+    inline for (SHADERS) |shader| {
+        const cmd = b.addSystemCommand(&.{
+            shdcPath,
+            "--input=",
+            SHADERS_SRC_DIR ++ shader.src,
+            "--output=",
+            SHADERS_BUILD_DIR ++ shader.src ++ ".zig",
+            "--SLANG=",
+            SLANG,
+            "--format=sokol_zig",
+            "--reflection",
+        });
+        shdcStep.dependOn(&cmd.step);
+    }
 }

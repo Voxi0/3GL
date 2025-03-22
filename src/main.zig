@@ -16,7 +16,7 @@ const zmath = @import("zmath");
 const cam = @import("camera.zig");
 
 // Shaders
-const testShadersSrc = @import("./shaders/build/test-shader.zig");
+const testShadersSrc = @import("./shaders/build/test-shader.glsl.zig");
 
 // Settings
 const winTitle = "LearningSokol";
@@ -240,15 +240,21 @@ export fn deinit() void {
 // Main - Run the application
 pub fn main() void {
     sokol.app.run(.{
+        // Window configuration
+        .icon = .{ .sokol_default = winDefaultIcon },
         .window_title = winTitle,
         .width = winWidth,
         .height = winHeight,
         .fullscreen = true,
-        .icon = .{ .sokol_default = winDefaultIcon },
         .sample_count = sampleCount,
+
+        // Provide function pointers for various things
         .init_cb = init,
         .frame_cb = update,
         .event_cb = event,
         .cleanup_cb = deinit,
+
+        // Configure extras
+        .enable_clipboard = true,
     });
 }
