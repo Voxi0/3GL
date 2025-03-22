@@ -1,25 +1,23 @@
 // Standard library
 const std = @import("std");
+const config = @import("config");
 
 // Sokol
 const sokol = @import("sokol");
 const sg = sokol.gfx;
 const simgui = sokol.imgui;
 
-// Dear ImGUI for UI
-const ig = @import("cimgui");
-
-// 3D maths library
-const zmath = @import("zmath");
-
 // Engine
 const cam = @import("camera.zig");
+
+// Utilities
+const ig = @import("cimgui"); // Dear ImGUI for UI
+const zmath = @import("zmath"); // 3D maths library
 
 // Shaders
 const testShadersSrc = @import("./shaders/build/test-shader.glsl.zig");
 
 // Settings
-const winTitle = "LearningSokol";
 const winDefaultIcon: bool = true;
 const winWidth: u16 = 800;
 const winHeight: u16 = 600;
@@ -64,85 +62,88 @@ export fn init() void {
         .front = zmath.Vec{ 0, 0, -1, 0 },
 
         .fov = 60,
-        .minFov = 0.1,
+        .minFov = 40,
         .maxFov = 120,
 
         .moveSpeed = 5,
         .lookSpeed = 0.3,
     };
 
-    // Test object with vertex positions and colors
-    const vertices: [168]f32 = [168]f32{
-        -1.0, -1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
-        1.0,  -1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
-        1.0,  1.0,  -1.0, 1.0, 0.0, 0.0, 1.0,
-        -1.0, 1.0,  -1.0, 1.0, 0.0, 0.0, 1.0,
+    // Test object
+    {
+        // Test object with vertex positions and colors
+        const vertices: [168]f32 = [168]f32{
+            -1.0, -1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
+            1.0,  -1.0, -1.0, 1.0, 0.0, 0.0, 1.0,
+            1.0,  1.0,  -1.0, 1.0, 0.0, 0.0, 1.0,
+            -1.0, 1.0,  -1.0, 1.0, 0.0, 0.0, 1.0,
 
-        -1.0, -1.0, 1.0,  0.0, 1.0, 0.0, 1.0,
-        1.0,  -1.0, 1.0,  0.0, 1.0, 0.0, 1.0,
-        1.0,  1.0,  1.0,  0.0, 1.0, 0.0, 1.0,
-        -1.0, 1.0,  1.0,  0.0, 1.0, 0.0, 1.0,
+            -1.0, -1.0, 1.0,  0.0, 1.0, 0.0, 1.0,
+            1.0,  -1.0, 1.0,  0.0, 1.0, 0.0, 1.0,
+            1.0,  1.0,  1.0,  0.0, 1.0, 0.0, 1.0,
+            -1.0, 1.0,  1.0,  0.0, 1.0, 0.0, 1.0,
 
-        -1.0, -1.0, -1.0, 0.0, 0.0, 1.0, 1.0,
-        -1.0, 1.0,  -1.0, 0.0, 0.0, 1.0, 1.0,
-        -1.0, 1.0,  1.0,  0.0, 0.0, 1.0, 1.0,
-        -1.0, -1.0, 1.0,  0.0, 0.0, 1.0, 1.0,
+            -1.0, -1.0, -1.0, 0.0, 0.0, 1.0, 1.0,
+            -1.0, 1.0,  -1.0, 0.0, 0.0, 1.0, 1.0,
+            -1.0, 1.0,  1.0,  0.0, 0.0, 1.0, 1.0,
+            -1.0, -1.0, 1.0,  0.0, 0.0, 1.0, 1.0,
 
-        1.0,  -1.0, -1.0, 1.0, 0.5, 0.0, 1.0,
-        1.0,  1.0,  -1.0, 1.0, 0.5, 0.0, 1.0,
-        1.0,  1.0,  1.0,  1.0, 0.5, 0.0, 1.0,
-        1.0,  -1.0, 1.0,  1.0, 0.5, 0.0, 1.0,
+            1.0,  -1.0, -1.0, 1.0, 0.5, 0.0, 1.0,
+            1.0,  1.0,  -1.0, 1.0, 0.5, 0.0, 1.0,
+            1.0,  1.0,  1.0,  1.0, 0.5, 0.0, 1.0,
+            1.0,  -1.0, 1.0,  1.0, 0.5, 0.0, 1.0,
 
-        -1.0, -1.0, -1.0, 0.0, 0.5, 1.0, 1.0,
-        -1.0, -1.0, 1.0,  0.0, 0.5, 1.0, 1.0,
-        1.0,  -1.0, 1.0,  0.0, 0.5, 1.0, 1.0,
-        1.0,  -1.0, -1.0, 0.0, 0.5, 1.0, 1.0,
+            -1.0, -1.0, -1.0, 0.0, 0.5, 1.0, 1.0,
+            -1.0, -1.0, 1.0,  0.0, 0.5, 1.0, 1.0,
+            1.0,  -1.0, 1.0,  0.0, 0.5, 1.0, 1.0,
+            1.0,  -1.0, -1.0, 0.0, 0.5, 1.0, 1.0,
 
-        -1.0, 1.0,  -1.0, 1.0, 0.0, 0.5, 1.0,
-        -1.0, 1.0,  1.0,  1.0, 0.0, 0.5, 1.0,
-        1.0,  1.0,  1.0,  1.0, 0.0, 0.5, 1.0,
-        1.0,  1.0,  -1.0, 1.0, 0.0, 0.5, 1.0,
-    };
-    const indices: [36]u16 = [36]u16{
-        0,  1,  2,  0,  2,  3,
-        6,  5,  4,  7,  6,  4,
-        8,  9,  10, 8,  10, 11,
-        14, 13, 12, 15, 14, 12,
-        16, 17, 18, 16, 18, 19,
-        22, 21, 20, 23, 22, 20,
-    };
+            -1.0, 1.0,  -1.0, 1.0, 0.0, 0.5, 1.0,
+            -1.0, 1.0,  1.0,  1.0, 0.0, 0.5, 1.0,
+            1.0,  1.0,  1.0,  1.0, 0.0, 0.5, 1.0,
+            1.0,  1.0,  -1.0, 1.0, 0.0, 0.5, 1.0,
+        };
+        const indices: [36]u16 = [36]u16{
+            0,  1,  2,  0,  2,  3,
+            6,  5,  4,  7,  6,  4,
+            8,  9,  10, 8,  10, 11,
+            14, 13, 12, 15, 14, 12,
+            16, 17, 18, 16, 18, 19,
+            22, 21, 20, 23, 22, 20,
+        };
 
-    // Vertex buffers
-    var bufferDesc = std.mem.zeroes(sg.BufferDesc);
-    bufferDesc.type = sg.BufferType.VERTEXBUFFER;
-    bufferDesc.size = vertices.len * @sizeOf(f32);
-    bufferDesc.data = .{ .ptr = &vertices[0], .size = bufferDesc.size };
-    renderState.bindings.vertex_buffers[0] = sg.makeBuffer(bufferDesc);
+        // Vertex buffers
+        var bufferDesc = std.mem.zeroes(sg.BufferDesc);
+        bufferDesc.type = sg.BufferType.VERTEXBUFFER;
+        bufferDesc.size = vertices.len * @sizeOf(f32);
+        bufferDesc.data = .{ .ptr = &vertices[0], .size = bufferDesc.size };
+        renderState.bindings.vertex_buffers[0] = sg.makeBuffer(bufferDesc);
 
-    // Index/Element buffers
-    bufferDesc = std.mem.zeroes(sg.BufferDesc);
-    bufferDesc.type = sg.BufferType.INDEXBUFFER;
-    bufferDesc.size = indices.len * @sizeOf(u16);
-    bufferDesc.data = .{ .ptr = &indices[0], .size = bufferDesc.size };
-    renderState.bindings.index_buffer = sg.makeBuffer(bufferDesc);
+        // Index/Element buffers
+        bufferDesc = std.mem.zeroes(sg.BufferDesc);
+        bufferDesc.type = sg.BufferType.INDEXBUFFER;
+        bufferDesc.size = indices.len * @sizeOf(u16);
+        bufferDesc.data = .{ .ptr = &indices[0], .size = bufferDesc.size };
+        renderState.bindings.index_buffer = sg.makeBuffer(bufferDesc);
 
-    // Shaders
-    const testShaders = sg.makeShader(testShadersSrc.triangleShaderDesc(sg.queryBackend()));
+        // Shaders
+        const testShaders = sg.makeShader(testShadersSrc.triangleShaderDesc(sg.queryBackend()));
 
-    // Pipeline
-    var pipelineDesc: sg.PipelineDesc = .{
-        .shader = testShaders,
-        .index_type = sg.IndexType.UINT16,
-        .cull_mode = sg.CullMode.BACK,
-        .depth = .{
-            .compare = sg.CompareFunc.LESS_EQUAL,
-            .write_enabled = true,
-        },
-    };
-    pipelineDesc.layout.attrs[testShadersSrc.ATTR_triangle_position].format = sg.VertexFormat.FLOAT3;
-    pipelineDesc.layout.attrs[testShadersSrc.ATTR_triangle_color0].format = sg.VertexFormat.FLOAT4;
-    pipelineDesc.layout.buffers[0].stride = 28;
-    renderState.pipeline = sg.makePipeline(pipelineDesc);
+        // Pipeline
+        var pipelineDesc: sg.PipelineDesc = .{
+            .shader = testShaders,
+            .index_type = sg.IndexType.UINT16,
+            .cull_mode = sg.CullMode.BACK,
+            .depth = .{
+                .compare = sg.CompareFunc.LESS_EQUAL,
+                .write_enabled = true,
+            },
+        };
+        pipelineDesc.layout.attrs[testShadersSrc.ATTR_triangle_position].format = sg.VertexFormat.FLOAT3;
+        pipelineDesc.layout.attrs[testShadersSrc.ATTR_triangle_color0].format = sg.VertexFormat.FLOAT4;
+        pipelineDesc.layout.buffers[0].stride = 28;
+        renderState.pipeline = sg.makePipeline(pipelineDesc);
+    }
 }
 
 // Update and render everything
@@ -242,7 +243,7 @@ pub fn main() void {
     sokol.app.run(.{
         // Window configuration
         .icon = .{ .sokol_default = winDefaultIcon },
-        .window_title = winTitle,
+        .window_title = config.PROJECT_NAME.ptr,
         .width = winWidth,
         .height = winHeight,
         .fullscreen = true,

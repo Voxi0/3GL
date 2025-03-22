@@ -4,6 +4,13 @@ const sokol = @import("sokol");
 
 // Project settings
 const PROJECT_NAME = "LearningSokol";
+const PROJECT_VERSION: std.SemanticVersion = .{
+    .major = 0,
+    .minor = 1,
+    .patch = 0,
+};
+
+// Shaders
 const SOKOL_TOOLS_BIN_DIR = "./tools/sokol-tools-bin/bin/";
 const SLANG = "glsl410:glsl300es:metal_macos:hlsl5:wgsl";
 const SHADERS_SRC_DIR = "./src/shaders/";
@@ -50,15 +57,24 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    // Options
+    const options: *std.Build.Step.Options = b.addOptions();
+    options.addOption([]const u8, "PROJECT_NAME", PROJECT_NAME);
+    mainMod.addOptions("config", options);
+
     // A manually invoked build step to compile all shaders
     buildShaders(b, target);
 
     // Handle native and web builds
     if (target.result.cpu.arch.isWasm()) {
         try buildWeb(b, mainMod, sokolDep, cimguiDep);
-    } else {
-        try buildNative(b, mainMod);
-    }
+    } else try buildNative(b, mainMod);
+
+    // Run unit tests
+    const unitTests = b.addTest(.{ .root_module = mainMod });
+    const runUnitTests = b.addRunArtifact(unitTests);
+    const testStep = b.step("tests", "Run unit tests");
+    testStep.dependOn(&runUnitTests.step);
 }
 
 // Build for native platform
@@ -66,6 +82,7 @@ fn buildNative(b: *std.Build, mainMod: *std.Build.Module) !void {
     // Build an executable
     const exe = b.addExecutable(.{
         .name = PROJECT_NAME,
+        .version = PROJECT_VERSION,
         .root_module = mainMod,
     });
 
@@ -75,9 +92,7 @@ fn buildNative(b: *std.Build, mainMod: *std.Build.Module) !void {
     // Run step
     const runCmd = b.addRunArtifact(exe);
     runCmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        runCmd.addArgs(args);
-    }
+    if (b.args) |args| runCmd.addArgs(args);
     const runStep = b.step("run", "Run program");
     runStep.dependOn(&runCmd.step);
 }
@@ -87,6 +102,7 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
     // Build a static library
     const lib = b.addStaticLibrary(.{
         .name = PROJECT_NAME,
+        .version = PROJECT_VERSION,
         .root_module = mainMod,
     });
 
@@ -94,13 +110,13 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
     const emsdkDep: *std.Build.Dependency = sokolDep.builder.dependency("emsdk", .{});
 
     // Inject the Emscripten system header include path into the Cimgui C library
-    // Else the C/C++ code won't find the C stdlib headers
+    // Or else the C/C++ code won't find the C stdlib headers
     const emsdkIncludePath = emsdkDep.path("upstream/emscripten/cache/sysroot/include");
     cimguiDep.artifact("cimgui_clib").addSystemIncludePath(emsdkIncludePath);
 
     // All C libraries must depend on the Sokol library
     // Ensures that the Emscripten SDK has been set up before C compilation is attempted
-    // since the Sokol C library depends on the Emscripten SDK setup step
+    // Since the Sokol C library depends on the Emscripten SDK setup step
     cimguiDep.artifact("cimgui_clib").step.dependOn(&sokolDep.artifact("sokol_clib").step);
 
     // Build step invoking the Emscripten linker
@@ -117,7 +133,10 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
     });
 
     // Special run step to start the web build output via `emrun`
-    const run = sokol.emRunStep(b, .{ .name = "lib", .emsdk = emsdkDep });
+    const run = sokol.emRunStep(b, .{
+        .name = "lib",
+        .emsdk = emsdkDep,
+    });
     run.step.dependOn(&linkStep.step);
     b.step("run", "Run lib").dependOn(&run.step);
 }
@@ -148,7 +167,7 @@ fn buildShaders(b: *std.Build, target: std.Build.ResolvedTarget) void {
             SHADERS_SRC_DIR ++ shader.src,
             "--output=",
             SHADERS_BUILD_DIR ++ shader.src ++ ".zig",
-            "--SLANG=",
+            "--slang=",
             SLANG,
             "--format=sokol_zig",
             "--reflection",
