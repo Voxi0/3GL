@@ -81,6 +81,7 @@ pub const Camera3D = struct {
     // Process mouse scroll to zoom in/out
     pub fn processMouseScroll(self: *Camera3D, event: sokol.app.Event) void {
         if (event.type == sokol.app.EventType.MOUSE_SCROLL) {
+            std.debug.assert(self.minFov > 0.1);
             self.fov += event.scroll_y;
             if (self.fov < self.minFov) self.fov = self.minFov;
             if (self.fov > self.maxFov) self.fov = self.maxFov;
