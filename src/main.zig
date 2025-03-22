@@ -67,7 +67,7 @@ export fn init() void {
         .minFov = 0.1,
         .maxFov = 120,
 
-        .moveSpeed = 2.5,
+        .moveSpeed = 5,
         .lookSpeed = 0.3,
     };
 
@@ -133,7 +133,7 @@ export fn init() void {
     var pipelineDesc: sg.PipelineDesc = .{
         .shader = testShaders,
         .index_type = sg.IndexType.UINT16,
-        .cull_mode = sg.CullMode.NONE,
+        .cull_mode = sg.CullMode.BACK,
         .depth = .{
             .compare = sg.CompareFunc.LESS_EQUAL,
             .write_enabled = true,

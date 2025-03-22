@@ -38,36 +38,30 @@ pub const Camera3D = struct {
 
     // Process keyboard input to move around
     pub fn processKb(self: *Camera3D, event: sokol.app.Event, deltaTime: f32) void {
-        if (event.key_code == keycode.W) {
-            self.position += self.front * zmath.f32x4s(self.moveSpeed * deltaTime);
-        }
-        if (event.key_code == keycode.S) {
-            self.position -= self.front * zmath.f32x4s(self.moveSpeed * deltaTime);
-        }
-        if (event.key_code == keycode.A) {
-            self.position -= zmath.normalize4(zmath.cross3(self.front, self.up)) *
-                zmath.f32x4s(self.moveSpeed * deltaTime);
-        }
-        if (event.key_code == keycode.D) {
-            self.position += zmath.normalize4(zmath.cross3(self.front, self.up)) *
-                zmath.f32x4s(self.moveSpeed * deltaTime);
+        if (event.type == sokol.app.EventType.KEY_DOWN) {
+            if (event.key_code == keycode.W) {
+                self.position += self.front * zmath.f32x4s(self.moveSpeed * deltaTime);
+            }
+            if (event.key_code == keycode.S) {
+                self.position -= self.front * zmath.f32x4s(self.moveSpeed * deltaTime);
+            }
+            if (event.key_code == keycode.A) {
+                self.position -= zmath.normalize4(zmath.cross3(self.front, self.up)) *
+                    zmath.f32x4s(self.moveSpeed * deltaTime);
+            }
+            if (event.key_code == keycode.D) {
+                self.position += zmath.normalize4(zmath.cross3(self.front, self.up)) *
+                    zmath.f32x4s(self.moveSpeed * deltaTime);
+            }
         }
     }
 
     // Process mouse movement to look around
     pub fn processMouse(self: *Camera3D, event: sokol.app.Event) void {
         if (event.type == sokol.app.EventType.MOUSE_MOVE) {
-            // Calculate mouse position offset and update last mouse pposition
-            var xOffset: f32 = event.mouse_dx;
-            var yOffset: f32 = -event.mouse_dy;
-
-            // Apply look speed (Mouse sensitivity) to mouse position offset
-            xOffset *= self.lookSpeed;
-            yOffset *= self.lookSpeed;
-
             // Update camera yaw and pitch
-            yaw += xOffset;
-            pitch += yOffset;
+            yaw += event.mouse_dx * self.lookSpeed;
+            pitch += -event.mouse_dy * self.lookSpeed;
 
             // Constrain camera pitch to stop it from rotating 360 degrees vertically
             if (pitch < -89) pitch = -89;
