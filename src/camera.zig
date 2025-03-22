@@ -36,25 +36,21 @@ pub const Camera3D = struct {
         );
     }
 
-    // Process keyboard input
+    // Process keyboard input to move around
     pub fn processKb(self: *Camera3D, event: sokol.app.Event, deltaTime: f32) void {
-        switch (event.type) {
-            sokol.app.EventType.KEY_DOWN => {
-                switch (event.key_code) {
-                    keycode.W => self.position += self.front * zmath.f32x4s(self.moveSpeed * deltaTime),
-                    keycode.S => self.position -= self.front * zmath.f32x4s(self.moveSpeed * deltaTime),
-                    keycode.A => {
-                        self.position -= zmath.normalize4(zmath.cross3(self.front, self.up)) *
-                            zmath.f32x4s(self.moveSpeed * deltaTime);
-                    },
-                    keycode.D => {
-                        self.position += zmath.normalize4(zmath.cross3(self.front, self.up)) *
-                            zmath.f32x4s(self.moveSpeed * deltaTime);
-                    },
-                    else => {},
-                }
-            },
-            else => {},
+        if (event.key_code == keycode.W) {
+            self.position += self.front * zmath.f32x4s(self.moveSpeed * deltaTime);
+        }
+        if (event.key_code == keycode.S) {
+            self.position -= self.front * zmath.f32x4s(self.moveSpeed * deltaTime);
+        }
+        if (event.key_code == keycode.A) {
+            self.position -= zmath.normalize4(zmath.cross3(self.front, self.up)) *
+                zmath.f32x4s(self.moveSpeed * deltaTime);
+        }
+        if (event.key_code == keycode.D) {
+            self.position += zmath.normalize4(zmath.cross3(self.front, self.up)) *
+                zmath.f32x4s(self.moveSpeed * deltaTime);
         }
     }
 
