@@ -157,16 +157,12 @@ export fn event(ev: [*c]const sokol.app.Event) void {
     // Forward input events to Sokol ImGUI
     _ = simgui.handleEvent(ev.*);
 
-    // Handle keyboard input for input
+    // Handle keyboard input, mouse movement and mouse scroll
     renderState.camera.processKb(ev.*, @as(f32, @floatCast(sokol.app.frameDuration())));
-
-    // Handle mouse movement to look around
     renderState.camera.processMouse(ev.*);
-
-    // Handle mouse scroll to zoom in/out
     renderState.camera.processMouseScroll(ev.*);
 
-    // Quit application when Escape key pressed
+    // Quit application when Esc key pressed
     if (ev.*.key_code == sokol.app.Keycode.ESCAPE) sokol.app.requestQuit();
 }
 export fn update() void {
@@ -178,8 +174,8 @@ export fn update() void {
         renderState.camera.far,
     );
 
-    // Calculate the product of the projection, view and model matrices in the respective order
-    // We multiply the model matrix again whenever it's changed in some way
+    // Projection matrix * View matrix * Model matrix
+    // We multiply the model matrix whenever it's modified
     pvm = zmath.mul(renderState.camera.getViewMat(), projectionMatrix);
 
     // UI

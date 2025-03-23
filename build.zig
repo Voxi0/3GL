@@ -16,7 +16,7 @@ const PROJECT_ZIG_DEPENDENCIES = .{
 };
 
 // Shaders
-const SOKOL_TOOLS_BIN_DIR = "./sokol-tools-bin";
+const SOKOL_TOOLS_BIN_DIR = "./sokol-tools-bin/";
 const SLANG = "glsl410:glsl300es:metal_macos:hlsl5:wgsl";
 const SHADERS_SRC_DIR = "./src/shaders/";
 const SHADERS_BUILD_DIR = "./src/shaders/build/";
@@ -70,6 +70,7 @@ pub fn build(b: *std.Build) void {
     // Add manually invoked build steps
     buildShaders(b, target);
     fetchDeps(b);
+    clean(b);
 
     // Handle native and web builds
     if (target.result.cpu.arch.isWasm()) {
@@ -147,7 +148,8 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
     b.step("run", "Run lib").dependOn(&run.step);
 }
 
-// Build step to compile all shaders
+// Build steps
+// To compile all shaders
 fn buildShaders(b: *std.Build, target: std.Build.ResolvedTarget) void {
     // Figure out which Sokol SHDC binary to use
     const optionalShdc: ?[:0]const u8 = comptime switch (builtin.os.tag) {
@@ -182,7 +184,7 @@ fn buildShaders(b: *std.Build, target: std.Build.ResolvedTarget) void {
     }
 }
 
-// Build step to fetch all dependencies
+// To fetch all dependencies
 fn fetchDeps(b: *std.Build) void {
     // Fetch all Zig dependencies
     const fetchDepsStep = b.step("fetchDeps", "Fetch all dependencies");
