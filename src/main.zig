@@ -56,15 +56,21 @@ export fn init() void {
         .clear_value = sg.Color{ .r = 0.2, .g = 0.2, .b = 0.2, .a = 1.0 },
     };
 
-    // Lock the mouse and create the camera
+    // Create the camera
     renderState.camera = .{
+        // Position and direction
         .position = zmath.Vec{ 0, 0, 5, 0 },
         .front = zmath.Vec{ 0, 0, -1, 0 },
 
+        .near = 0.1,
+        .far = 100,
+
+        // Field of view (FOV)
         .fov = 60,
         .minFov = 40,
         .maxFov = 120,
 
+        // Movement and look speed (Mouse sensitivity)
         .moveSpeed = 5,
         .lookSpeed = 0.3,
     };
@@ -168,8 +174,8 @@ export fn update() void {
     projectionMatrix = zmath.perspectiveFovRhGl(
         std.math.degreesToRadians(renderState.camera.fov),
         sokol.app.widthf() / sokol.app.heightf(),
-        0.1,
-        100,
+        renderState.camera.near,
+        renderState.camera.far,
     );
 
     // Calculate the product of the projection, view and model matrices in the respective order

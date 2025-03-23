@@ -19,6 +19,9 @@ pub const Camera3D = struct {
     front: zmath.Vec,
     up: zmath.Vec = .{ 0, 1, 0, 0 },
 
+    near: f32,
+    far: f32,
+
     fov: f32,
     minFov: f32,
     maxFov: f32,
@@ -81,8 +84,13 @@ pub const Camera3D = struct {
     // Process mouse scroll to zoom in/out
     pub fn processMouseScroll(self: *Camera3D, event: sokol.app.Event) void {
         if (event.type == sokol.app.EventType.MOUSE_SCROLL) {
-            std.debug.assert(self.minFov > 0.1);
-            self.fov += event.scroll_y;
+            // Ensure that `maxFov` and `minFov` doesn't cause the program to crash
+            // `minFov` cannot be less than 0.2 and `maxFov` cannot be 360 or more
+            std.debug.assert(self.minFov >= 0.2);
+            std.debug.assert(self.maxFov < 360);
+
+            // Set new FOV and clamp it to the minimum and maximum allowed values
+            self.fov -= event.scroll_y;
             if (self.fov < self.minFov) self.fov = self.minFov;
             if (self.fov > self.maxFov) self.fov = self.maxFov;
         }

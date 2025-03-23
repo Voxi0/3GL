@@ -9,9 +9,14 @@ const PROJECT_VERSION: std.SemanticVersion = .{
     .minor = 1,
     .patch = 0,
 };
+const PROJECT_ZIG_DEPENDENCIES = .{
+    .{ .name = "sokol", .src = "git+https://github.com/floooh/sokol-zig.git" },
+    .{ .name = "zmath", .src = "git+https://github.com/zig-gamedev/zmath.git" },
+    .{ .name = "cimgui", .src = "git+https://github.com/floooh/dcimgui.git" },
+};
 
 // Shaders
-const SOKOL_TOOLS_BIN_DIR = "./tools/sokol-tools-bin/bin/";
+const SOKOL_TOOLS_BIN_DIR = "./sokol-tools-bin";
 const SLANG = "glsl410:glsl300es:metal_macos:hlsl5:wgsl";
 const SHADERS_SRC_DIR = "./src/shaders/";
 const SHADERS_BUILD_DIR = "./src/shaders/build/";
@@ -62,8 +67,9 @@ pub fn build(b: *std.Build) void {
     options.addOption([]const u8, "PROJECT_NAME", PROJECT_NAME);
     mainMod.addOptions("config", options);
 
-    // A manually invoked build step to compile all shaders
+    // Add manually invoked build steps
     buildShaders(b, target);
+    fetchDeps(b);
 
     // Handle native and web builds
     if (target.result.cpu.arch.isWasm()) {
@@ -145,9 +151,9 @@ fn buildWeb(b: *std.Build, mainMod: *std.Build.Module, sokolDep: *std.Build.Depe
 fn buildShaders(b: *std.Build, target: std.Build.ResolvedTarget) void {
     // Figure out which Sokol SHDC binary to use
     const optionalShdc: ?[:0]const u8 = comptime switch (builtin.os.tag) {
-        .windows => "win32/sokol-shdc.exe",
-        .linux => if (target.result.cpu.arch.isX86()) "linux/sokol-shdc" else "linux_arm64/sokol-shdc",
-        .macos => if (target.result.cpu.arch.isX86()) "osx/sokol-shdc" else "osx_arm64/sokol-shdc",
+        .windows => "bin/win32/sokol-shdc.exe",
+        .linux => if (target.result.cpu.arch.isX86()) "bin/linux/sokol-shdc" else "bin/linux_arm64/sokol-shdc",
+        .macos => if (target.result.cpu.arch.isX86()) "bin/osx/sokol-shdc" else "bin/osx_arm64/sokol-shdc",
         else => null,
     };
 
@@ -174,4 +180,27 @@ fn buildShaders(b: *std.Build, target: std.Build.ResolvedTarget) void {
         });
         shdcStep.dependOn(&cmd.step);
     }
+}
+
+// Build step to fetch all dependencies
+fn fetchDeps(b: *std.Build) void {
+    // Fetch all Zig dependencies
+    const fetchDepsStep = b.step("fetchDeps", "Fetch all dependencies");
+    inline for (PROJECT_ZIG_DEPENDENCIES) |dependency| {
+        const cmd = b.addSystemCommand(&.{
+            "zig", "fetch", "--save=" ++ dependency.name, dependency.src,
+        });
+        fetchDepsStep.dependOn(&cmd.step);
+    }
+
+    // Fetch Sokol SHDC (Shader compiler) if it doesn't exist, update it if otherwise
+    const fetchSokolShdcCmd = b.addSystemCommand(&.{
+        "git", "clone", "https://github.com/floooh/sokol-tools-bin", SOKOL_TOOLS_BIN_DIR,
+    });
+    const updateSokolShdcCmd = b.addSystemCommand(&.{
+        "git", "-C", SOKOL_TOOLS_BIN_DIR, "pull", "--ff-only",
+    });
+    if (std.fs.cwd().openDir(SOKOL_TOOLS_BIN_DIR, .{})) |_| {
+        fetchDepsStep.dependOn(&updateSokolShdcCmd.step);
+    } else |_| fetchDepsStep.dependOn(&fetchSokolShdcCmd.step);
 }

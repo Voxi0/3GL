@@ -1,3 +1,6 @@
 # Cache and build
 .zig-cache
 zig-out
+
+# Sokol SHDC (Shader compiler)
+sokol-tools-bin
